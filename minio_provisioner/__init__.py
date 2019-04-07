@@ -1,12 +1,11 @@
 from os import environ
-from flask import Flask, jsonify, render_template, session
+from flask import Flask, jsonify, redirect, render_template, request, session
 from flask_pyoidc.provider_configuration import *
 from flask_pyoidc.flask_pyoidc import OIDCAuthentication
 from .minio import create_instance, get_instances
 
-_server_name = environ.get('URL_SCHEME', 'https') + environ['SERVER_NAME']
-_server_name = _server_name[:_server_name.index(':')]
-print(_server_name)
+_server_name = environ.get('URL_SCHEME', 'https') + '://' + environ['SERVER_NAME']
+_server_name = _server_name[:_server_name.rindex(':')]
 
 app = Flask(__name__)
 app.config.update(
@@ -25,14 +24,11 @@ _config = ProviderConfiguration(
 )
 _auth = OIDCAuthentication({'default': _config}, app)
 
-@app.route('/create/<username>/<name>/<s3_access_key>/<s3_secret_key>')
-def create(username, name, s3_access_key, s3_secret_key):
-    create_instance(username, name, s3_access_key, s3_secret_key)
-    return ''
-
-@app.route('/get/<username>')
-def get(username):
-    return jsonify(get_instances(username))
+@app.route('/create', methods = ['POST'])
+@_auth.oidc_auth('default')
+def create():
+    create_instance(session['userinfo']['preferred_username'], request.form['name'], request.form['s3_access_key'], request.form['s3_secret_key'])
+    return redirect('/')
 
 @app.route('/')
 @_auth.oidc_auth('default')

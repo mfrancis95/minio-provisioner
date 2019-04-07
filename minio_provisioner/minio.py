@@ -1,6 +1,7 @@
 from docker import APIClient
 from os import environ
 from redis import Redis
+from time import sleep
 
 _docker = APIClient(environ.get('DOCKER_SOCKET', 'unix://var/run/docker.sock'), 'auto')
 _redis = Redis(decode_responses = True)
@@ -25,7 +26,12 @@ def create_instance(username, name, s3_access_key, s3_secret_key):
         }), name = name
     )
     _docker.start(container['Id'])
+    sleep(1)
+    if _docker.inspect_container(container['Id'])['State']['Status'] == 'exited':
+        _docker.remove_container(container['Id'], force = True)
+        return False
     _redis.hset(username, name, port)
+    return True
 
 def get_instances(username):
     return _redis.hgetall(username)
