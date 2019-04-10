@@ -1,5 +1,5 @@
 from os import environ
-from flask import Flask, jsonify, redirect, render_template, request, session
+from flask import *
 from flask_pyoidc.provider_configuration import *
 from flask_pyoidc.flask_pyoidc import OIDCAuthentication
 from .minio import create_instance, get_instances
@@ -27,7 +27,9 @@ _auth = OIDCAuthentication({'default': _config}, app)
 @app.route('/create', methods = ['POST'])
 @_auth.oidc_auth('default')
 def create():
-    create_instance(session['userinfo']['preferred_username'], request.form['name'], request.form['s3_access_key'], request.form['s3_secret_key'])
+    error = create_instance(session['userinfo']['preferred_username'], request.form['name'], request.form['s3_access_key'], request.form['s3_secret_key'])
+    if error:
+        flash(error)
     return redirect('/')
 
 @app.route('/')

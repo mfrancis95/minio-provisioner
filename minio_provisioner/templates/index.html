@@ -21,6 +21,13 @@
             </div>
         </nav>
         <div class="container">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="card bg-danger mt-4 text-white">
+                <div class="card-header"><h4>{{messages[0]}}</h4></div>
+            </div>
+            {% endif %}
+            {% endwith %}
             {% for instance in instances|batch(4) %}
             <div class="row">
                 {% for name, port in instances.items() %}
